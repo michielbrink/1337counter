@@ -1,10 +1,12 @@
 #!/usr/bin/python -u
 import socket
 import sys
-from thread import *
- 
+from multiprocessing import Process
+import time
+
 send = ")"
 receive = "("
+BPM = 0
  
 HOST = ''   # Symbolic name meaning all available interfaces
 PORT = 50000 # Arbitrary non-privileged port
@@ -24,15 +26,28 @@ print 'Socket bind complete'
 #Start listening on socket
 s.listen(10)
 print 'Socket now listening'
- 
+
+def minuteCounter():
+    while True:
+        global BPM
+        print "BPM = " + str(BPM*6)
+        BPM = 0
+        time.sleep(10)
+
+p = Process(target=minuteCounter)
+p.start()
+
 #Function for handling connections. This will be used to create threads
 def clientthread(conn):
     #Sending message to connected client
     conn.send('Welcome to the server. Type something and hit enter\n') #send only takes string
      
     #infinite loop so that function do not terminate and thread do not end.
+    global BPM
+    BPM = -1
     old_data = "0"
-    zaps = 0
+    zaps = -1
+
     while True:
          
         #Receiving from client
@@ -42,8 +57,8 @@ def clientthread(conn):
         if data == send:
             if old_data != data:
                 zaps = zaps+1
-                print "zaps = "
-                print zaps
+                print "zaps = " + str(zaps)
+                BPM = BPM + 1
                 old_data = data
         if data == receive:
             if old_data != data:
@@ -58,8 +73,6 @@ while 1:
     conn, addr = s.accept()
     print 'Connected with ' + addr[0] + ':' + str(addr[1])
      
-    #start new thread takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
-    start_new_thread(clientthread ,(conn,))
  
 s.close()
 
